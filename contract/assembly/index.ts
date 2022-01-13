@@ -1,6 +1,9 @@
 import { Context, PersistentUnorderedMap, MapEntry, logging, storage, util, math } from 'near-sdk-as'
 import { bodyUrl, Web4Request, Web4Response } from './web4'
 
+const VOTE_COOLDOWN: u64 = 10 * 1000_000_000; // in nanoseconds // TODO: Set 1 day
+const TEAMS = ['🔴 red', '🟢 green', '🔵 blue'];
+
 export function renderNFT(accountId: string): string {
   let seed = math.hash(accountId);
   let h1 = seed[0];
@@ -10,6 +13,13 @@ export function renderNFT(accountId: string): string {
   let r = (f64(seed[4]) / 255.) * 0.7 + 1;
   let s1 = seed[5] % 80 + 20;
   let s2 = seed[6] % 80 + 20;
+
+  const winning = 'winning 🏆';
+  const losing = 'losing 💩';
+  const teamIndex = seed[7] % TEAMS.length;
+  const team = TEAMS[teamIndex];
+  const winningTeamIndex = storage.getPrimitive<i32>('winning-team', -1);
+  const result = teamIndex == winningTeamIndex ? winning : losing;
 
   const svg = `
     <svg width="512" height="512" version="1.1" xmlns="http://www.w3.org/2000/svg">
@@ -21,7 +31,7 @@ export function renderNFT(accountId: string): string {
       </defs>
       <rect x="0" y="0" rx="15" ry="15" width="100%" height="100%" fill="url(#RadialGradient2)">
       </rect>
-      <text x="50%" y="48" style="font-family: sans-serif; font-size: 24px; fill: white;" text-anchor="middle" >🚧 This NFT is under construction 🚧</text>
+      <text x="50%" y="48" style="font-family: sans-serif; font-size: 24px; fill: white;" text-anchor="middle" >${team} team is ${result}</text>
       <text x="50%" y="464" style="font-family: sans-serif; font-size: 48px; fill: white;" text-anchor="middle" >${accountId}</text>
     </svg>
   `;
@@ -172,4 +182,30 @@ export function nft_mint_to(receiver_id: string): void {
   assert(!minted.contains(receiver_id), `${receiver_id} minted already`);
 
   minted.set(receiver_id, Context.blockTimestamp);
+}
+
+export function vote(): void {
+  const accountId = Context.sender;
+  assert(minted.contains(accountId), `${accountId} didn't mint NFT`);
+
+  const lastVoteKey = `last-vote:${accountId}`;
+  const lastVoteTime = storage.getPrimitive<u64>(lastVoteKey, 0);
+  assert(Context.blockTimestamp - lastVoteTime > VOTE_COOLDOWN, 'not enough time since last vote')
+
+  let seed = math.hash(accountId);
+  const teamIndex = seed[7] % TEAMS.length;
+
+  let votes = storage.get<u64[]>('team-votes', [0, 0, 0])!;
+  votes[teamIndex]++;
+  storage.set('team-votes', votes);
+
+  let winningTeam = 0;
+  for (let i = 0; i < votes.length; i++) {
+    if (votes[winningTeam] < votes[i]) {
+      winningTeam = i;
+    }
+  }
+
+  storage.set('winning-team', winningTeam);
+  storage.set(lastVoteKey, Context.blockTimestamp);
 }
