@@ -8,8 +8,9 @@ import { utils } from 'near-api-js'
 const { networkId } = getConfig(process.env.NODE_ENV || 'development')
 
 export default function App() {
-  // use React Hooks to store username in component state
   const [username, setUsername] = React.useState()
+  const [teamVotes, setTeamVotes] = React.useState([])
+  const [canVote, setCanVote] = React.useState()
 
   // when the user has not yet interacted with the form, disable the button
   const [buttonDisabled, setButtonDisabled] = React.useState(true)
@@ -28,6 +29,11 @@ export default function App() {
         window.contract.getTwitterUsername({ accountId: window.accountId })
           .then(usernameFromContract => {
             setUsername(usernameFromContract)
+          })
+        window.contract.getTeamVotes()
+          .then(teamVotes => {
+            console.log('teamVotes', teamVotes);
+            setTeamVotes(teamVotes)
           })
       }
     },
@@ -169,6 +175,27 @@ export default function App() {
             </button>
           </fieldset>
         </form>
+
+        <h2>Team leaderboard</h2>
+        <ul>
+          { [...teamVotes]
+              .sort((a, b) => b.votes - a.votes)
+              .map(({ team, votes }) => <li>{ team } – { votes }</li>)}
+        </ul>
+
+        <h2>Rules</h2>
+        <ul>
+          <li>Vote for your team once per day</li>
+          <li>Add your team color emoji to your Twitter username</li>
+          <li>Team which gets most votes wins</li>
+        </ul>
+
+        <button
+          disabled={!canVote}
+          style={{ borderRadius: '0 5px 5px 0' }}
+        >
+          Vote
+        </button>
 
         <hr />
         <p>
