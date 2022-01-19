@@ -187,10 +187,7 @@ export function nft_mint_to(receiver_id: string): void {
 export function vote(): void {
   const accountId = Context.sender;
   assert(minted.contains(accountId), `${accountId} didn't mint NFT`);
-
-  const lastVoteKey = `last-vote:${accountId}`;
-  const lastVoteTime = storage.getPrimitive<u64>(lastVoteKey, 0);
-  assert(Context.blockTimestamp - lastVoteTime > VOTE_COOLDOWN, 'not enough time since last vote')
+  assert(getTimeUntilVote(accountId) == 0, 'not enough time since last vote')
 
   let seed = math.hash(accountId);
   const teamIndex = seed[7] % TEAMS.length;
@@ -207,5 +204,30 @@ export function vote(): void {
   }
 
   storage.set('winning-team', winningTeam);
-  storage.set(lastVoteKey, Context.blockTimestamp);
+  storage.set(`last-vote:${accountId}`, Context.blockTimestamp);
+}
+
+@nearBindgen
+class TeamVotes {
+  team: string;
+  votes: u64;
+}
+
+export function getTimeUntilVote(accountId: string): u64 {
+  const lastVoteKey = `last-vote:${accountId}`;
+  const lastVoteTime = storage.getPrimitive<u64>(lastVoteKey, 0);
+  const timeAfterLastVote = Context.blockTimestamp - lastVoteTime;
+  return timeAfterLastVote > VOTE_COOLDOWN ? 0 : VOTE_COOLDOWN - timeAfterLastVote;
+}
+
+export function getTeamVotes(): TeamVotes[] {
+  let votes = storage.get<u64[]>('team-votes', [0, 0, 0])!;
+  let teamVotes: TeamVotes[] = [];
+  for (let i = 0; i < votes.length; i++) {
+    teamVotes.push({
+      team: TEAMS[i],
+      votes: votes[i]
+    })
+  }
+  return teamVotes;
 }
