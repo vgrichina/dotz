@@ -218,24 +218,27 @@ export default function App() {
           <li>Team which gets most votes wins</li>
         </ul>
 
-        { !canVote && timeUntilVote != null && <p>You can vote again: {timeago.format(Date.now() + timeUntilVote / 1000_000)} </p>}
+        {hasToken && 
+          <>
+            { !canVote && timeUntilVote != null && <p>You can vote again: {timeago.format(Date.now() + timeUntilVote / 1000_000)} </p>}
 
-        <button
-          disabled={!canVote}
-          style={{ borderRadius: '0 5px 5px 0' }}
-          onClick={async event => {
-            setTimeUntilVote(null);
-            setSubmitting(true);
-            try {
-              await window.contract.vote();
-            } catch (e) {
-              setSubmitting(false);
-            }
-            refresh();
-          }}
-        >
-          Vote
-        </button>
+            <button
+              disabled={!canVote}
+              style={{ borderRadius: '0 5px 5px 0' }}
+              onClick={async event => {
+                setTimeUntilVote(null);
+                setSubmitting(true);
+                try {
+                  await window.contract.vote();
+                } catch (e) {
+                  setSubmitting(false);
+                }
+                refresh();
+              }}
+            >
+              Vote
+            </button>
+          </>}
 
         <hr />
         <p>
