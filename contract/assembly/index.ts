@@ -126,7 +126,7 @@ export function web4_get(request: Web4Request): Web4Response {
     return { contentType: 'image/svg+xml; charset=UTF-8', body: util.stringToBytes(svg) };
   }
 
-  return bodyUrl(`ipfs://bafybeihgjbjqmhexuqp3jevhrgex2vsydnjzgeyc4jpie5nrgewjk6nbpy${request.path}`);
+  return bodyUrl(`ipfs://bafybeibbw4lwftmc5qp3qvixf6sy3xqizyydedj6h5wpt3uq5vtgs42xue${request.path}`);
 }
 
 export function nft_token(token_id: string): Token | null {
