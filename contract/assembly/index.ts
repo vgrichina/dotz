@@ -32,6 +32,7 @@ export function renderNFT(accountId: string): string {
       <rect x="0" y="0" rx="15" ry="15" width="100%" height="100%" fill="url(#RadialGradient2)">
       </rect>
       <text x="50%" y="48" style="font-family: sans-serif; font-size: 24px; fill: white;" text-anchor="middle" >${team} team is ${result}</text>
+      <text x="50%" y="96" style="font-family: sans-serif; font-size: 24px; fill: white;" text-anchor="middle" >Play at dotz.near.page</text>
       <text x="50%" y="464" style="font-family: sans-serif; font-size: 48px; fill: white;" text-anchor="middle" >${accountId}</text>
     </svg>
   `;
