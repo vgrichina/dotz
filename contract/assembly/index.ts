@@ -1,7 +1,7 @@
 import { Context, PersistentUnorderedMap, MapEntry, logging, storage, util, math } from 'near-sdk-as'
 import { bodyUrl, Web4Request, Web4Response } from './web4'
 
-const VOTE_COOLDOWN: u64 = 10 * 1000_000_000; // in nanoseconds // TODO: Set 1 day
+const VOTE_COOLDOWN: u64 = 24 * 60 * 60 * 1000_000_000; // in nanoseconds
 const TEAMS = ['🔴 red', '🟢 green', '🔵 blue'];
 
 export function renderNFT(accountId: string): string {
