@@ -1,5 +1,6 @@
 import 'regenerator-runtime/runtime'
 import React from 'react'
+import * as timeago from 'timeago.js';
 import { login, logout } from './utils'
 import './global.css'
 
@@ -10,7 +11,8 @@ const { networkId } = getConfig(process.env.NODE_ENV || 'development')
 export default function App() {
   const [username, setUsername] = React.useState()
   const [teamVotes, setTeamVotes] = React.useState([])
-  const [canVote, setCanVote] = React.useState()
+  const [timeUntilVote, setTimeUntilVote] = React.useState()
+  const [submitting, setSubmitting] = React.useState()
 
   // when the user has not yet interacted with the form, disable the button
   const [buttonDisabled, setButtonDisabled] = React.useState(true)
@@ -18,25 +20,33 @@ export default function App() {
   // after submitting the form, we want to show Notification
   const [showNotification, setShowNotification] = React.useState(false)
 
+  const canVote = !submitting && timeUntilVote === '0'
+
+  const refresh = () => {
+    if (window.walletConnection.isSignedIn()) {
+
+      // window.contract is set by initContract in index.js
+      window.contract.getTwitterUsername({ accountId: window.accountId })
+        .then(usernameFromContract => {
+          setUsername(usernameFromContract)
+        })
+      window.contract.getTeamVotes()
+        .then(teamVotes => {
+          console.log('teamVotes', teamVotes);
+          setTeamVotes(teamVotes)
+        })
+
+      window.contract.getTimeUntilVote({ accountId: window.accountId })
+        .then(timeUntilVote => {
+          setTimeUntilVote(timeUntilVote)
+        })
+    }
+  }
+
   // The useEffect hook can be used to fire side-effects during render
   // Learn more: https://reactjs.org/docs/hooks-intro.html
   React.useEffect(
-    () => {
-      // in this case, we only care to query the contract when signed in
-      if (window.walletConnection.isSignedIn()) {
-
-        // window.contract is set by initContract in index.js
-        window.contract.getTwitterUsername({ accountId: window.accountId })
-          .then(usernameFromContract => {
-            setUsername(usernameFromContract)
-          })
-        window.contract.getTeamVotes()
-          .then(teamVotes => {
-            console.log('teamVotes', teamVotes);
-            setTeamVotes(teamVotes)
-          })
-      }
-    },
+    refresh,
 
     // The second argument to useEffect tells React when to re-run the effect
     // Use an empty array to specify "only run on first render"
@@ -180,7 +190,7 @@ export default function App() {
         <ul>
           { [...teamVotes]
               .sort((a, b) => b.votes - a.votes)
-              .map(({ team, votes }) => <li>{ team } – { votes }</li>)}
+              .map(({ team, votes }) => <li key={team}>{ team } – { votes }</li>)}
         </ul>
 
         <h2>Rules</h2>
@@ -190,9 +200,21 @@ export default function App() {
           <li>Team which gets most votes wins</li>
         </ul>
 
+        { !canVote && timeUntilVote != null && <p>You can vote again: {timeago.format(Date.now() + timeUntilVote / 1000_000)} </p>}
+
         <button
           disabled={!canVote}
           style={{ borderRadius: '0 5px 5px 0' }}
+          onClick={async event => {
+            setTimeUntilVote(null);
+            setSubmitting(true);
+            try {
+              await window.contract.vote();
+            } catch (e) {
+              setSubmitting(false);
+            }
+            refresh();
+          }}
         >
           Vote
         </button>
