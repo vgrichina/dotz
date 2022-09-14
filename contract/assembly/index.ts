@@ -2,7 +2,7 @@ import { Context, PersistentUnorderedMap, MapEntry, logging, storage, util, math
 import { bodyUrl, Web4Request, Web4Response } from './web4'
 
 const VOTE_COOLDOWN: u64 = 24 * 60 * 60 * 1000_000_000; // in nanoseconds
-const TEAMS = ['🔴 red', '🟢 green', '🔵 blue'];
+const TEAMS = ['🔴 red', '🟢 green', '🟣 purple'];
 
 export function renderNFT(accountId: string): string {
   let seed = math.hash(accountId);
