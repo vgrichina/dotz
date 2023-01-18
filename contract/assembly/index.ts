@@ -115,6 +115,20 @@ export function getTwitterUsername(accountId: string): string | null {
   return twitterUsernames.get(accountId);
 }
 
+function assertOwner(): void {
+  // NOTE: Can change this check to alow different owners
+  assert(Context.sender == Context.contractName);
+}
+
+const WEB4_STATIC_URL_KEY = 'web4:staticUrl';
+
+// Updates current static content URL in smart contract storage
+export function web4_setStaticUrl(url: string): void {
+  assertOwner();
+
+  storage.set(WEB4_STATIC_URL_KEY, url);
+}
+
 export function web4_get(request: Web4Request): Web4Response {
   if (request.path.startsWith('/img')) {
     const parts = request.path.split('/');
@@ -126,7 +140,7 @@ export function web4_get(request: Web4Request): Web4Response {
     return { contentType: 'image/svg+xml; charset=UTF-8', body: util.stringToBytes(svg) };
   }
 
-  return bodyUrl(`ipfs://bafybeibbw4lwftmc5qp3qvixf6sy3xqizyydedj6h5wpt3uq5vtgs42xue${request.path}`);
+  return bodyUrl(`${storage.getString(WEB4_STATIC_URL_KEY)!}${request.path}`);
 }
 
 export function nft_token(token_id: string): Token | null {
